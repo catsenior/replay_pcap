@@ -21,24 +21,21 @@ dest_ip_from_first_pcap = pkts[0][IP].dst
 ip_id = 55688
 
 # 3-way handshake
+sample_first_seq = pkts[0][TCP].seq
+sample_first_ack = pkts[0][TCP].ack
 
 # SYN
-syn_pkt = Ether(src= mac1, dst= mac2) / IP(src= nic1_ip, dst= nic2_ip) / TCP(sport= client_port, dport= server_port, flags='S')
+syn_pkt = Ether(src= mac1, dst= mac2) / IP(src= nic1_ip, dst= nic2_ip) / TCP(sport= client_port, dport= server_port, flags='S',seq = (sample_first_seq- 1), ack = 0)
 sendp(syn_pkt, iface= nic1)
 # SYN ACK
-syn_ack_pkt = Ether(src= mac2, dst= mac1) / IP(src= nic2_ip, dst= nic1_ip) / TCP(sport= server_port, dport= client_port, flags='SA', ack=syn_pkt.seq + 1)
+syn_ack_pkt = Ether(src= mac2, dst= mac1) / IP(src= nic2_ip, dst= nic1_ip) / TCP(sport= server_port, dport= client_port, flags='SA', seq = (sample_first_ack- 1), ack =  sample_first_seq)
 sendp(syn_ack_pkt, iface= nic2)
 # ACK
-ack_pkt = Ether(src= mac1, dst= mac2) / IP(src= nic1_ip, dst= nic2_ip) / TCP(sport= client_port, dport= server_port, flags='A', seq= syn_pkt.seq + 1, ack= syn_ack_pkt.seq + 1)
+ack_pkt = Ether(src= mac1, dst= mac2) / IP(src= nic1_ip, dst= nic2_ip) / TCP(sport= client_port, dport= server_port, flags='A',seq = sample_first_seq, ack = sample_first_ack)
 sendp(ack_pkt, iface= nic1)
-
-# 紀錄 ack_pkt.seq 和 ack_pkt.ack
-ack_pkt_seq = ack_pkt.seq
-ack_pkt_ack = ack_pkt.ack
 
 # 修改封包中的 IP 和 MAC 位址
 for pkt in pkts:
-    global ack_pkt_seq, ack_pkt_ack
 
     if pkt[IP].src == src_ip_from_first_pcap:
         if TCP in pkt:
@@ -48,9 +45,6 @@ for pkt in pkts:
             # pkt[TCP].seq = 0
             # pkt[TCP].ack = 0
             pkt[TCP].dport = server_port
-            # ack_pkt_seq
-            pkt[TCP].seq = ack_pkt_seq
-            pkt[TCP].ack = ack_pkt_ack
 
         if IP in pkt:
             pkt[IP].src = nic1_ip
@@ -75,8 +69,7 @@ for pkt in pkts:
             # pkt[TCP].seq = 0
             # pkt[TCP].ack = 0
             pkt[TCP].sport = server_port
-            # ack_pkt_seq
-            pkt[TCP].seq = ack_pkt_ack
+
         if IP in pkt:
             pkt[IP].src = nic2_ip
             pkt[IP].dst = nic1_ip
