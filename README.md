@@ -8,15 +8,19 @@ This script is primarily used for replaying network traffic. It reads packets fr
 
 - **IP and MAC Address Modification**: The script modifies the source and destination IP and MAC addresses of the packets before sending them out. This allows the replayed packets to appear as if they are coming from a different network device.
 
+- **Automatic Handshake for Pure Packets**: If a packet is identified as a pure packet, the program can automatically complete the three-way handshake using the first packet.
 
 ## Usage
 
 To use this script, you need to specify the pcap file to replay and the network interface to send the packets out on. You also need to specify the source and destination IP and MAC addresses to use for the replayed packets.
 
 ```python
-sudo python replay_pcap.py 
+sudo python replay_pcap_3W.py 
 ```
 
+```python
+sudo python change_ip_mac.py 
+```
 Please note that this script requires root privileges to send packets on a network interface.
 
 ## Checking
